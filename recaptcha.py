@@ -8,7 +8,7 @@ def get_task():
         "Content-Type": "application/json"
     }
     data = json.dumps({
-        "clientKey": "cbaef255c14b9daa40f511573e14e005",
+        "clientKey": "c915e62ed93b9d0e6e08620b7642e951",
         "task":
             {
                 "type": "NoCaptchaTaskProxyless",
@@ -25,7 +25,7 @@ def get_resp(id):
         "Content-Type": "application/json"
     }
     data = json.dumps({
-        "clientKey": "cbaef255c14b9daa40f511573e14e005",
+        "clientKey": "c915e62ed93b9d0e6e08620b7642e951",
         "taskId": id
     })
     # print(data)

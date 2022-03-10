@@ -1,5 +1,4 @@
-import asyncio
-import aiofiles
+import aiohttp
 import requests
 import json
 import data_type
@@ -7,7 +6,6 @@ import datetime
 import recaptcha
 import urllib3
 from lxml import html
-import re
 
 id = {'history': ['vehicle', 'ownershipPeriods'],
       'dtp': 'Accidents',
@@ -18,7 +16,7 @@ id = {'history': ['vehicle', 'ownershipPeriods'],
 url = "https://xn--b1afk4ade.xn--90adear.xn--p1ai/proxy/check/auto/{}"
 
 
-def get_data(vin):
+async def get_data(vin):
     car = {}
     headers = {
         'Accept': 'application / json, text / javascript, * / *; q = 0.01',
@@ -32,18 +30,22 @@ def get_data(vin):
         'checkType': ['history', 'aiusdtp', 'wanted', 'restricted', 'diagnostic']
     }
     
-
+    
 
     for key in id.keys():
-        req = requests.post(url=url.format(key), headers=headers, params=params)
         
-        while ('RequestResult' not in req.json()):
-            req = requests.post(url=url, headers=headers, params=params)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url=url.format(key), headers=headers, params=params) as response:
+                req = await response.json()
+
+
+        #req = requests.post(url=url.format(key), headers=headers, params=params)
+        
 
     # запрос по регистрации
         if key == 'history':
-            d_register = req.json()["RequestResult"][id[key][0]]
-            p_register = req.json()["RequestResult"][id[key][1]]['ownershipPeriod']
+            d_register = req["RequestResult"][id[key][0]]
+            p_register = req["RequestResult"][id[key][1]]['ownershipPeriod']
             if d_register.get('engineNumber') == None:
                 d_register['engineNumber'] = '-'
                 d_register['engineVolume'] = '-'
@@ -71,7 +73,7 @@ def get_data(vin):
 
     # запрос по дтп
         elif key == 'dtp':
-            d_dtp = req.json()["RequestResult"][id[key]]
+            d_dtp = req["RequestResult"][id[key]]
             car['dtp'] = []
             for num in d_dtp:
                 car['dtp'].append({
@@ -87,7 +89,7 @@ def get_data(vin):
 
     # запрос по розыску
         elif key == 'wanted':
-            d_wanted = req.json()["RequestResult"][id[key]]
+            d_wanted = req["RequestResult"][id[key]]
             car['wanted'] = []
             for num in d_wanted:
                 car['wanted'].append({
@@ -103,7 +105,7 @@ def get_data(vin):
         elif key == 'restrict':
             car['limit'] = []
             try:
-                d_limit = req.json()["RequestResult"][id[key]]
+                d_limit = req["RequestResult"][id[key]]
                 for num in d_limit:
                     car['limit'].append({
                         'date_l': num['dateogr'],
@@ -123,7 +125,7 @@ def get_data(vin):
         elif key == 'diagnostic':
             car['diagnostic'] = []
             try:
-                d_diagnostic = req.json()["RequestResult"][id[key]]
+                d_diagnostic = req["RequestResult"][id[key]]
                 for num in d_diagnostic:
                     car['diagnostic'].append({
                         'number_dc': num['dcNumber'],
@@ -142,7 +144,7 @@ def get_data(vin):
             print(car)
     return car
 
-def getVin(gosnum):
+async def getVin(gosnum):
     now = datetime.datetime.now()
     headers = {
         "Content-Type": "application/x-www-form-urlencoded"
@@ -150,15 +152,25 @@ def getVin(gosnum):
     payload = "bsoseries=ССС&bsonumber=&requestDate={}" \
                 "&vin=&licensePlate={}" \
                 "&bodyNumber=&chassisNumber=&isBsoRequest=false&captcha={}".format(now.strftime("%d.%m.%Y"), gosnum, recaptcha.solution())
-    r = requests.post(url="https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm", headers=headers, data=payload.encode('utf-8'), verify=False).json()
+    
+    #r = requests.post(url="https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm", headers=headers, data=payload.encode('utf-8'), verify=False).json()
+
+    async with aiohttp.ClientSession() as session:
+            async with session.post(url="https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm", headers=headers, data=payload.encode('utf-8')) as response:
+                r = await response.json()
 
     payload = "processId={}" \
               "&bsoseries=ССС&bsonumber=&vin=&licensePlate={}" \
               "&bodyNumber=&chassisNumber=&requestDate={}" \
               "&g-recaptcha-response=".format(r['processId'], gosnum, now.strftime("%d.%m.%Y"))
     while True:
-        r = requests.post(url="https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfoData.htm", headers=headers,
-                      data=payload.encode('utf-8'), verify=False)
+        #r = requests.post(url="https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfoData.htm", headers=headers,
+        #              data=payload.encode('utf-8'), verify=False)
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url="https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfoData.htm", headers=headers, data=payload.encode('utf-8')) as response:
+                r = await response.json()
+
         tree = html.fromstring(r.content)
         try:
             VIN = tree.xpath('//tr[./td[text()="VIN"]]/td[2]/text()')[0]
@@ -169,3 +181,4 @@ def getVin(gosnum):
             else:
                 continue
     return VIN
+

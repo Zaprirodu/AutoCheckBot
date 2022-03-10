@@ -4,6 +4,7 @@ import gibdd
 import json
 import itertools
 import templates
+import aiohttp
 import uuid
 
 # Основная функция - createReport(vin)
@@ -76,13 +77,13 @@ json1 = {
 #Токен Telegra.ph. Можно сгененерировать свой
 token = 'c0c4bc25e50641cb84eda4bb0cf29deb6384ee959b0ca257142177c9e7e8'
 
-def createVIN(gosNum):
-    vin = gibdd.getVin(gosNum)
-    url = createReport(vin)
+async def createVIN(gosNum):
+    vin = await gibdd.getVin(gosNum)
+    url = await createReport(vin)
     return url
 
-def createReport(vin):
-    autoObj = gibdd.get_data(vin)
+async def createReport(vin):
+    autoObj = await gibdd.get_data(vin)
     content = list(itertools.chain(mainInfo(autoObj), usedPeriod(autoObj), dtp(autoObj), limits(autoObj),
                                 diagnostics(autoObj)))
 
@@ -92,7 +93,11 @@ def createReport(vin):
         "content": json.dumps(content),
     }
     # print(data)
-    r = requests.post("https://api.telegra.ph/createPage", data=data).json()
+    async with aiohttp.ClientSession() as session:
+        async with session.post("https://api.telegra.ph/createPage", data=data) as response:
+            r = await response.json()  
+              
+    #r = requests.post("https://api.telegra.ph/createPage", data=data).json()
     return r['result']['url']
 
 def mainInfo(autoObj):
