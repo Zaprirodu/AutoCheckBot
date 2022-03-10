@@ -36,11 +36,11 @@ async def get_data(vin):
         
         async with aiohttp.ClientSession() as session:
             async with session.post(url=url.format(key), headers=headers, params=params) as response:
-                req = await response.json()
+                req = await response.json(content_type = None)
 
-
-        #req = requests.post(url=url.format(key), headers=headers, params=params)
-        
+       
+        #req = requests.post(url=url.format(key), headers=headers, params=params).json()
+        print(req)
 
     # запрос по регистрации
         if key == 'history':
@@ -73,31 +73,37 @@ async def get_data(vin):
 
     # запрос по дтп
         elif key == 'dtp':
-            d_dtp = req["RequestResult"][id[key]]
             car['dtp'] = []
-            for num in d_dtp:
-                car['dtp'].append({
-                    'number_dtp': num['AccidentNumber'],
-                    'time_dtp': num['AccidentDateTime'],
-                    'type_dtp': num['AccidentType'],
-                    'place_dtp': num['AccidentPlace'],
-                    'model_dtp': num['VehicleMark'],
+            try:
+                d_dtp = req["RequestResult"][id[key]]
+                for num in d_dtp:
+                    car['dtp'].append({
+                        'number_dtp': num['AccidentNumber'],
+                        'time_dtp': num['AccidentDateTime'],
+                        'type_dtp': num['AccidentType'],
+                        'place_dtp': num['AccidentPlace'],
+                        'model_dtp': num['VehicleMark'],
 
-                })
+                    })
+            except:
+                pass
             if len(car['dtp']) == 0 :
                 car['dtp'].append('По указанному VIN номеру не найдено данных')
 
     # запрос по розыску
         elif key == 'wanted':
-            d_wanted = req["RequestResult"][id[key]]
             car['wanted'] = []
-            for num in d_wanted:
-                car['wanted'].append({
-                    'model_w': num['w_model'],
-                    'year_w': num['w_god_vyp'],
-                    'data_w': num['w_data_pu'],
-                    'region_w': num['w_reg_inic']
-                })
+            try:
+                d_wanted = req["RequestResult"][id[key]]
+                for num in d_wanted:
+                    car['wanted'].append({
+                        'model_w': num['w_model'],
+                        'year_w': num['w_god_vyp'],
+                        'data_w': num['w_data_pu'],
+                        'region_w': num['w_reg_inic']
+                    })
+            except:
+                pass
             if len(car['wanted']) == 0 :
                 car['wanted'].append('По указанному VIN номеру не найдено данных')
 
@@ -169,11 +175,10 @@ async def getVin(gosnum):
 
         async with aiohttp.ClientSession() as session:
             async with session.post(url="https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfoData.htm", headers=headers, data=payload.encode('utf-8')) as response:
-                r = await response.json()
+                r = html.fromstring(await response.read()).xpath('//tr[./td[text()="VIN"]]/td[2]/text()')
 
-        tree = html.fromstring(r.content)
         try:
-            VIN = tree.xpath('//tr[./td[text()="VIN"]]/td[2]/text()')[0]
+            VIN = r[0]
             break
         except:
             if ('Сведения о договоре ОСАГО с указанными данными не найдены.' in r.text):
