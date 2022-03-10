@@ -1,7 +1,7 @@
 import json
 
 import requests
-from config import Q_SECRETKEY
+from ..config import Q_SECRETKEY
 
 
 def get_invoice(billid: str, amount: float):

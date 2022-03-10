@@ -10,15 +10,15 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher import FSMContext
 
-from states import UserStatus
-import gibdd
+from ..database.states import UserStatus
+from ..gibdd import gibdd
 
 async def process_name(message: types.Message, state: FSMContext):
     if (len(message.text) == 17):
         await gibdd.set_vin(message.text)
         await state.finish()
     else:
-        await bot.send_message(msg.from_user.id, 'Введите корректный VIN номер')
+        await message.bot.send_message(message.from_user.id, 'Введите корректный VIN номер')
 
 
 def register_vin(dp: Dispatcher):

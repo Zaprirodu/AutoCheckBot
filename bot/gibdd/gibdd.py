@@ -7,6 +7,8 @@ import recaptcha
 import urllib3
 from lxml import html
 
+import get_dtp
+
 id = {'history': ['vehicle', 'ownershipPeriods'],
       'dtp': 'Accidents',
       'wanted': 'records',
@@ -35,12 +37,13 @@ async def get_data(vin):
     for key in id.keys():
         
         async with aiohttp.ClientSession() as session:
-            async with session.post(url=url.format(key), headers=headers, params=params) as response:
-                req = await response.json(content_type = None)
+                async with session.post(url=url.format(key), headers=headers, params=params) as response:
+                    req = await response.json(content_type = None)
 
-       
-        #req = requests.post(url=url.format(key), headers=headers, params=params).json()
-        print(req)
+        while req.get('RequestResult') == None:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=url.format(key), headers=headers, params=params) as response:
+                    req = await response.json(content_type = None)
 
     # запрос по регистрации
         if key == 'history':
@@ -83,7 +86,8 @@ async def get_data(vin):
                         'type_dtp': num['AccidentType'],
                         'place_dtp': num['AccidentPlace'],
                         'model_dtp': num['VehicleMark'],
-
+                        'dmp_dtp': num['DamagePoints'],
+                        'way_image': get_dtp.svgtopng(num['DamagePoints'])
                     })
             except:
                 pass

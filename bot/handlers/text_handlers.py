@@ -8,11 +8,11 @@ from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher import FSMContext
 
-from states import UserStatus
-from database import Repo
+from ..database.states import UserStatus
+from ..database.database import Repo
 
-import tgraph
-import states
+from ..utils import tgraph
+from ..database import states
 
 async def check_vin(message: types.Message, repo: Repo, state: FSMContext):
 
@@ -23,18 +23,18 @@ async def check_vin(message: types.Message, repo: Repo, state: FSMContext):
     markup.add(button1).add(button2)
 
     if (len(message.text) == 17):
-        #try:
-        await message.bot.send_message(message.from_user.id, "Пожалуйста подождите, отчет на подходе.")
-        url = await tgraph.createReport(message.text)
-        #except TypeError:
-        #    await message.bot.send_message(message.from_user.id, "Такого VIN номера не существует. Пожалуйста введите корректный номер.")
-        #except KeyError:
-        #    await message.bot.send_message(message.from_user.id, "Такого VIN номера не существует. Пожалуйста введите корректный номер.")
-        #else: 
-        await state.finish()
-        await message.bot.send_message(message.from_user.id, url, reply_markup=markup)
-        await repo.set_value(message.from_user.id, -50)
-
+        try:
+            await message.bot.send_message(message.from_user.id, "Пожалуйста подождите, отчет на подходе.")
+            url = await tgraph.createReport(message.text)
+        except TypeError:
+            await message.bot.send_message(message.from_user.id, "Такого VIN номера не существует. Пожалуйста введите корректный номер.")
+        except KeyError:
+            await message.bot.send_message(message.from_user.id, "Такого VIN номера не существует. Пожалуйста введите корректный номер.")
+        else: 
+            await state.finish()
+            await message.bot.send_message(message.from_user.id, url, reply_markup=markup)
+            await repo.set_value(message.from_user.id, -50)
+            
     elif (len(message.text) == 8 or len(message.text) == 9):
         pattern = re.compile('[А-я][0-9]{3}[А-я]{2}[0-9]{2,3}')
         if(pattern.match(message.text)):

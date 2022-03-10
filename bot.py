@@ -7,19 +7,18 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
-from postgres_middleware import DbMiddleware
-from throttling import ThrottlingMiddleware
 
-import pay
-import payment
-import commands_handlers
-import text_handlers
+from bot.database.postgres_middleware import DbMiddleware
+from bot.database.throttling import ThrottlingMiddleware
 
-from states import UserStatus
-from config import TOKEN
+from bot.payment import pay
+from bot.payment import payment
+from bot.handlers import commands_handlers
+from bot.handlers import text_handlers
 
-import config
-import database
+from bot.database.states import UserStatus
+
+from bot import config
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ async def main():
     logging.basicConfig(level=logging.INFO)
     storage = MemoryStorage()
     
-    bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
+    bot = Bot(token=config.TOKEN, parse_mode=types.ParseMode.HTML)
     dp = Dispatcher(bot, storage=storage)
 
 

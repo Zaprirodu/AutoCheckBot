@@ -7,12 +7,12 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher import FSMContext
 
-from database import Repo
-from states import UserStatus
+from ..database.database import Repo
+from ..database.states import UserStatus
 
 
-import gibdd
-import states
+from ..gibdd import gibdd
+from ..database import states
 
 async def start_cmd(message: types.Message, repo: Repo):
 

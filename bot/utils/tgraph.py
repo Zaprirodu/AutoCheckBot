@@ -1,12 +1,10 @@
-import requests
-import asyncio
-import gibdd
 import json
 import itertools
-import templates
 import aiohttp
 import uuid
 
+from ..gibdd import templates
+from ..gibdd import gibdd
 # Основная функция - createReport(vin)
 # функция возвращает URL отчета, в самом внизу закомментирован пример
 
