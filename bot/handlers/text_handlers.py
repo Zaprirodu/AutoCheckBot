@@ -26,10 +26,12 @@ async def check_vin(message: types.Message, repo: Repo, state: FSMContext):
         try:
             await message.bot.send_message(message.from_user.id, "Пожалуйста подождите, отчет на подходе.")
             url = await tgraph.createReport(message.text)
-        except TypeError:
+        except TypeError as er:
             await message.bot.send_message(message.from_user.id, "Такого VIN номера не существует. Пожалуйста введите корректный номер.")
-        except KeyError:
+            print('Ошибка:\n', traceback.format_exc())
+        except KeyError as er:
             await message.bot.send_message(message.from_user.id, "Такого VIN номера не существует. Пожалуйста введите корректный номер.")
+            print('Ошибка:\n', traceback.format_exc())
         else: 
             await state.finish()
             await message.bot.send_message(message.from_user.id, url, reply_markup=markup)

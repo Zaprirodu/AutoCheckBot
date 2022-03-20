@@ -1,4 +1,4 @@
-import fuction_all
+from ..damage_points import fuction_all
 
 def get_svg (point):
 

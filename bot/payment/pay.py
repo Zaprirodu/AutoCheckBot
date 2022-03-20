@@ -8,7 +8,7 @@ from aiogram.dispatcher import FSMContext
 from ..database.database import Repo
 from ..database.states import UserStatus
 
-import qiwi
+from ..payment import qiwi
 
 async def add_bill(msg: types.Message, state: FSMContext, repo: Repo):
     must_pay = 0

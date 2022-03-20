@@ -1,9 +1,9 @@
 from cairosvg import svg2png
 
-import damage_points_m, damage_points_l, damage_points_b
-import damage_points_o, damage_points_f, damage_points_d
+from ..damage_points import damage_points_m, damage_points_l, damage_points_b
+from ..damage_points import damage_points_o, damage_points_f, damage_points_d
 
-import fuction_all
+from ..damage_points import fuction_all
 
 
 # svg to png ахуеть

@@ -157,14 +157,17 @@ def diagnostics(autoObj):
     obj = [
         {'tag': 'h4', 'children': ['Данные о диагностической карте']}
     ]
-    if type(autoObj['diagnostic'][0]) == str:
+    try:
+        if type(autoObj['diagnostic'][0]) == str:
+            obj.append({'tag': 'p', 'children': ['Не найдено']})
+        else:
+            for diag in autoObj['diagnostic']:
+                diag_desc = templates.diagnostic_template.format(diag['number_dc'], diag['date_dc'], diag['date_end_dc'],
+                                                                 diag['addres_dc'], diag['odometr_dc'])
+                obj.append({'tag': 'p', 'children': [diag_desc]})
+    except:
         obj.append({'tag': 'p', 'children': ['Не найдено']})
-    else:
-        for diag in autoObj['diagnostic']:
-            diag_desc = templates.diagnostic_template.format(diag['number_dc'], diag['date_dc'], diag['date_end_dc'],
-                                                             diag['addres_dc'], diag['odometr_dc'])
-            obj.append({'tag': 'p', 'children': [diag_desc]})
-    return obj
-
+    return obj  
+    
 # Пример генерации отчета
 #print(createReport('X7LBSRBYHBH427587'))

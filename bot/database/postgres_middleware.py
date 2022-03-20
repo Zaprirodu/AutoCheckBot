@@ -1,5 +1,5 @@
 from aiogram.dispatcher.middlewares import LifetimeControllerMiddleware
-from database import Repo
+from ..database.database import Repo
 
 
 class DbMiddleware(LifetimeControllerMiddleware):

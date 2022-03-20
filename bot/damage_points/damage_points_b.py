@@ -1,5 +1,4 @@
-import fuction_all
-import get_dtp
+from ..damage_points import fuction_all
 
 def get_svg (point):
 

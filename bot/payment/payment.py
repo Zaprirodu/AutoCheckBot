@@ -7,7 +7,7 @@ from aiogram.dispatcher import FSMContext
 from ..database.database import Repo
 from ..database.states import UserStatus
 
-import qiwi
+from ..payment import qiwi
 
 async def check_payment(call: types.CallbackQuery, state: FSMContext, repo: Repo):
     await call.bot.answer_callback_query(call.id)
