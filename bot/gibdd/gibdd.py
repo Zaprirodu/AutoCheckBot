@@ -1,10 +1,12 @@
 import json
 import asyncio
 import aiohttp
-import time
+import datetime
+from lxml import html
 
 from ..damage_points import get_dtp
 from ..gibdd import data_type
+from ..utils import recaptcha
 
 
 id = {'history': ['vehicle', 'ownershipPeriods'],
@@ -182,6 +184,7 @@ async def get_data(VIN):
 
     return car
 
+
 async def getVin(gosnum):
     now = datetime.datetime.now()
     headers = {
@@ -210,14 +213,20 @@ async def getVin(gosnum):
         async with aiohttp.ClientSession() as session:
             async with session.post(url="https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfoData.htm", headers=headers,
                                     data=payload.encode('utf-8')) as response:
-                r = html.fromstring(await response.read()).xpath('//tr[./td[text()="VIN"]]/td[2]/text()')
+                resp = await response.text()
+                r, g = [
+                    html.fromstring(await response.read()).xpath('//tr[./td[text()="VIN"]]/td[2]/text()'),
+                    html.fromstring(await response.text()).xpath('//table[./tr/td[text()="VIN"]]/tr[2]/td[2]/text()')
+                ]
 
         try:
             VIN = r[0]
+            GOS = g[0]
+            print(r, GOS)
             break
         except:
             if ('Сведения о договоре ОСАГО с указанными данными не найдены.' in r.text):
                 raise ValueError('VIN не найден')
             else:
                 continue
-    return VIN
+    return [VIN, GOS]

@@ -2,6 +2,9 @@ import json
 import itertools
 import aiohttp
 import uuid
+import time
+import hashlib
+import asyncio
 
 from ..gibdd import templates
 from ..gibdd import gibdd
@@ -75,15 +78,56 @@ json1 = {
 #Токен Telegra.ph. Можно сгененерировать свой
 token = 'c0c4bc25e50641cb84eda4bb0cf29deb6384ee959b0ca257142177c9e7e8'
 
+
+async def getImageAuto(gosnum):
+    tstamp = str(round(time.time()*1000))
+    secret = hashlib.sha256(
+        f"p15{gosnum}8163461e568122437b580aa8e6df6940history{tstamp}queivoo1ieNgae2e"
+            .encode('utf-8')
+    ).hexdigest()
+    headers = {
+        'User-Agent': 'Nomerogram/2.34.0 (Android; samsung; SM-G988N; 1.00)'
+    }
+    info = {
+        'src':[],
+        'link':[]
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://www.nomerogram.ru/api/v1.1/group/list?carplate={gosnum}&"
+                               f"device_id=8163461e568122437b580aa8e6df6940&"
+                               f"from=history&"
+                               f"app_id=p15&"
+                               f"timestamp={tstamp}&"
+                               f"secret={secret}", headers=headers) as response:
+            r = await response.json()
+            print(r)
+            for data_el in r['data']['groups']:
+                info['link'].append(data_el['group_url'])
+                for photo in data_el['photos']:
+                    info['src'].append(photo['src']['default'])
+        return info
+
+
+
+
 async def createVIN(gosNum):
     vin = await gibdd.getVin(gosNum)
     url = await createReport(vin)
     return url
 
-async def createReport(vin):
+async def createReport(num, arg):
+    vin, gosnum = await gibdd.getVin(num)
     autoObj = await gibdd.get_data(vin)
-    content = list(itertools.chain(mainInfo(autoObj), usedPeriod(autoObj), dtp(autoObj), limits(autoObj),
-                                diagnostics(autoObj)))
+    ngram = await getImageAuto(gosnum)
+    #img = images(ngram['src'])
+    content = list(itertools.chain(
+        mainInfo(autoObj),
+        usedPeriod(autoObj),
+        dtp(autoObj),
+        limits(autoObj),
+        diagnostics(autoObj),
+        social(ngram['link']),
+    ))
 
     data = {
         "access_token": token,
@@ -93,10 +137,12 @@ async def createReport(vin):
     # print(data)
     async with aiohttp.ClientSession() as session:
         async with session.post("https://api.telegra.ph/createPage", data=data) as response:
-            r = await response.json()  
-              
+            r = await response.json()
+
     #r = requests.post("https://api.telegra.ph/createPage", data=data).json()
     return r['result']['url']
+
+
 
 def mainInfo(autoObj):
     obj = [
@@ -168,6 +214,46 @@ def diagnostics(autoObj):
     except:
         obj.append({'tag': 'p', 'children': ['Не найдено']})
     return obj  
-    
+
+
+def images(img_lst):
+    obj = []
+    if len(img_lst) == 0:
+        obj.append({'tag': 'h4', 'children': ['Изображений не найдено']})
+    else:
+        for count, img in enumerate(img_lst):
+            if (count > 5):
+                break
+            obj.append({
+                'tag': 'a',
+                'children': [{
+                    'tag': 'img',
+                    'attrs': {'src': img}
+                }]
+            })
+    return obj
+
+
+
+def social(soc_lst):
+    obj = []
+    if len(soc_lst) == 0:
+        obj.append({'tag': 'h4', 'children': ['Упоминаний не найдено']})
+    else:
+        obj.append({'tag': 'h4', 'children': ['Найдены упоминания: ']})
+        for soc in soc_lst:
+            obj.append({
+                'tag': 'p',
+                'children':[{
+                    'tag': 'a',
+                    'children': [soc],
+                    'attrs': {'href': soc}
+                }]
+            })
+    return obj
+
+
+
+
 # Пример генерации отчета
 #print(createReport('X7LBSRBYHBH427587'))
