@@ -80,23 +80,28 @@ async def createVIN(gosNum):
     url = await createReport(vin)
     return url
 
-async def createReport(vin):
-    autoObj = await gibdd.get_data(vin)
-    content = list(itertools.chain(mainInfo(autoObj), usedPeriod(autoObj), dtp(autoObj), limits(autoObj),
-                                diagnostics(autoObj)))
+async def createReport(num, arg):
+    if (arg == 0):
+        autoObj = await gibdd.get_data(num)
+        content = list(itertools.chain(mainInfo(autoObj), usedPeriod(autoObj), dtp(autoObj), limits(autoObj),
+                                    diagnostics(autoObj)))
 
-    data = {
-        "access_token": token,
-        "title": "Автоотчет #"+str(uuid.uuid1()),
-        "content": json.dumps(content),
-    }
-    # print(data)
-    async with aiohttp.ClientSession() as session:
-        async with session.post("https://api.telegra.ph/createPage", data=data) as response:
-            r = await response.json()  
-              
-    #r = requests.post("https://api.telegra.ph/createPage", data=data).json()
-    return r['result']['url']
+        data = {
+            "access_token": token,
+            "title": "Автоотчет #"+str(uuid.uuid1()),
+            "content": json.dumps(content),
+        }
+        # print(data)
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://api.telegra.ph/createPage", data=data) as response:
+                r = await response.json()  
+                
+        #r = requests.post("https://api.telegra.ph/createPage", data=data).json()
+        return r['result']['url']
+    elif (arg == 1):
+        vin = await gibdd.getVin(num)
+        await createReport(vin, 0)
+
 
 def mainInfo(autoObj):
     obj = [

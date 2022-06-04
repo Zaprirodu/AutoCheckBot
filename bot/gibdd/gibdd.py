@@ -1,10 +1,12 @@
 import json
 import asyncio
 import aiohttp
-import time
+import datetime
+import html
 
 from ..damage_points import get_dtp
 from ..gibdd import data_type
+from ..utils import recaptcha
 
 
 id = {'history': ['vehicle', 'ownershipPeriods'],
