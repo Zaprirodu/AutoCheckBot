@@ -11,8 +11,12 @@ class Repo:
 
     async def add_new_user(self, id: int) -> None:
         await self.conn.execute(
-            "INSERT INTO Users(id, balance)"
+            "INSERT INTO Users(id, balance) "
             "VALUES(%s, 0) ON CONFLICT DO NOTHING" % id)
+        await self.conn.execute(
+            "INSERT INTO users_cats(user_id, history_key, dtp_key, wanted_key, restrict_key, diagnostic_key) "
+            "VALUES(%s, true, true, true, true, true) " 
+            "ON CONFLICT DO NOTHING" % id)
 
     async def set_value(self, id: int, value: int):
         await self.conn.execute(
@@ -38,3 +42,18 @@ class Repo:
     async def delete_bill(self, billid: str):
         await self.conn.execute(
             "DELETE FROM bills WHERE bill = '%s'" % billid)
+
+    async def get_users(self):
+        result = await self.conn.fetch("SELECT id FROM users")
+        users = []
+        for us in result:
+            users.append(us[0])
+        return users
+
+    async def get_category(self, id: int):
+        result = await self.conn.fetchrow("SELECT * FROM users_cats WHERE user_id = %s" % id)
+        return result
+
+    async def update_category(self, category: str, id: int):
+        await self.conn.execute(
+            "UPDATE users_cats SET %s = NOT %s WHERE user_id = %s" % (category, category, id))

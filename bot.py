@@ -4,9 +4,7 @@ import logging
 
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
-from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.dispatcher import FSMContext
 
 from bot.database.postgres_middleware import DbMiddleware
 from bot.database.throttling import ThrottlingMiddleware
@@ -15,8 +13,7 @@ from bot.payment import pay
 from bot.payment import payment
 from bot.handlers import commands_handlers
 from bot.handlers import text_handlers
-
-from bot.database.states import UserStatus
+from bot.utils import categories
 
 from bot import config
 
@@ -49,6 +46,7 @@ async def main():
     commands_handlers.register_commands_handlers(dp)
     text_handlers.register_text_handlers(dp)
     payment.register_payment(dp)
+    categories.register_categories(dp)
 
     try:
         await dp.start_polling()

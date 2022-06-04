@@ -6,3 +6,6 @@ class UserStatus(StatesGroup):
 
     waiting_bill = State()
     waiting_payment = State()
+    
+    mass_mailing = State()
+    choosing_cat = State()

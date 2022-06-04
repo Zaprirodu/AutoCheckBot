@@ -1,18 +1,17 @@
-import asyncio
-import logging
 import re
 import traceback
+from unicodedata import category
 
-from datetime import datetime
-from aiogram import Bot, types
+from aiogram import types
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher import FSMContext
+from aiogram_broadcaster import MessageBroadcaster
 
 from ..database.states import UserStatus
 from ..database.database import Repo
 
 from ..utils import tgraph
-from ..database import states
+from ..config import ADMINS
 
 async def check_vin(message: types.Message, repo: Repo, state: FSMContext):
 
@@ -82,15 +81,42 @@ async def echo_message(msg: types.Message, repo: Repo):
         balance = await repo.read_balance(msg.from_user.id)
         ms = """Ваш ID: %s\nВаш баланс: %s&#8381""" % (msg.from_user.id, balance)
         money = types.InlineKeyboardButton('Пополнить счет', callback_data='money')
-        inline_kb = types.InlineKeyboardMarkup().add(money)
+
+        categories = types.InlineKeyboardButton('Выбрать категории', callback_data='categories')
+        inline_kb = types.InlineKeyboardMarkup().add(money).add(categories)
         await msg.bot.send_message(msg.from_user.id, ms, reply_markup=inline_kb)
         await msg.bot.send_message(msg.from_user.id, "Выберите действие", reply_markup=markup)
+    
+    elif (msg.text == "Массовая рассылка" or msg.text == "массовая рассылка"):
+
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        button = types.KeyboardButton('Отмена')
+
+        markup.add(button)
+
+        await UserStatus.mass_mailing.set()
+        await msg.bot.send_message(msg.from_user.id, "Введите сообщение", reply_markup=markup)
 
     if msg.text.split(' ')[0] == "add_value":
-        if (msg.from_user.id == 666624047):
+        if (msg.from_user.id in ADMINS):
             await repo.set_value(int(msg.text.split()[1]), int(msg.text.split()[2]))
+
+async def mass_mailing(message: types.Message, repo: Repo, state: FSMContext):
+    
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    button1 = types.KeyboardButton('Получить отчет')
+    button2 = types.KeyboardButton('Личный кабинет')
+
+    markup.add(button1).add(button2)
+
+    await state.finish()
+    users = await repo.get_users()
+    await MessageBroadcaster(users, message).run()
+    await message.bot.send_message(message.from_user.id, "Рассылка успешно завершена", reply_markup=markup)
+    
 
 def register_text_handlers(dp: Dispatcher):
     dp.register_message_handler(check_vin, state=UserStatus.check_vin)
+    dp.register_message_handler(mass_mailing, state=UserStatus.mass_mailing)
     dp.register_message_handler(echo_message, state="*")
     
