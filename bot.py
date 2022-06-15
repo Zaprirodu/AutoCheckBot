@@ -42,11 +42,14 @@ async def main():
     dp.middleware.setup(DbMiddleware(pool))
     dp.middleware.setup(ThrottlingMiddleware())
 
+
+    admins_handlers.register_admins_handlers(dp)
     pay.register_pay(dp)
     commands_handlers.register_commands_handlers(dp)
     text_handlers.register_text_handlers(dp)
     payment.register_payment(dp)
     categories.register_categories(dp)
+>>>>>>> Stashed changes
 
     try:
         await dp.start_polling()

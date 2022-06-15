@@ -31,6 +31,9 @@ async def check_vin(message: types.Message, repo: Repo, state: FSMContext):
         except KeyError as er:
             await message.bot.send_message(message.from_user.id, "Такого VIN номера не существует. Пожалуйста введите корректный номер.")
             print('Ошибка:\n', traceback.format_exc())
+        except ValueError as er:
+            await message.bot.send_message(message.from_user.id, "Такого VIN номера не существует. Пожалуйста введите корректный номер.")
+            print('Ошибка:\n', traceback.format_exc())
         else: 
             await state.finish()
             await message.bot.send_message(message.from_user.id, url, reply_markup=markup)
@@ -41,7 +44,11 @@ async def check_vin(message: types.Message, repo: Repo, state: FSMContext):
         if(pattern.match(message.text)):
             try:
                 await message.bot.send_message(message.from_user.id, "Пожалуйста подождите, отчет на подходе.")
+<<<<<<< Updated upstream
                 url = await tgraph.createVIN(message.text, 1)
+=======
+                url = await tgraph.createReport(message.text, 1)
+>>>>>>> Stashed changes
             except:
                 await message.bot.send_message(message.from_user.id, "Такого номера не существует. Пожалуйста введите корректный номер.")
                 print(traceback.format_exc())
@@ -51,11 +58,17 @@ async def check_vin(message: types.Message, repo: Repo, state: FSMContext):
                 await repo.set_value(message.from_user.id, -50)
         else:
             await message.bot.send_message(message.from_user.id, "Такого номера не существует. Пожалуйста введите корректный номер.")
+
+    elif (message.text == "Отмена" or message.text == "отмена"):
+        print("фывы")
+        await state.finish()
+        await message.bot.send_message(message.from_user.id, 'Выберите действие', reply_markup=markup)
+        
     else:
         await message.bot.send_message(message.from_user.id, "Такого номера не существует. Пожалуйста введите корректный номер.")
 
 
-async def echo_message(msg: types.Message, repo: Repo):
+async def echo_message(msg: types.Message, repo: Repo, state: FSMContext):
     if (msg.text == "Получить отчет" or msg.text == "получить отчет"):
         money = await repo.read_balance(msg.from_user.id)
         if money < 50:
@@ -97,6 +110,7 @@ async def echo_message(msg: types.Message, repo: Repo):
         await UserStatus.mass_mailing.set()
         await msg.bot.send_message(msg.from_user.id, "Введите сообщение", reply_markup=markup)
 
+<<<<<<< Updated upstream
     if msg.text.split(' ')[0] == "add_value":
         if (msg.from_user.id in ADMINS):
             await repo.set_value(int(msg.text.split()[1]), int(msg.text.split()[2]))
@@ -115,8 +129,10 @@ async def mass_mailing(message: types.Message, repo: Repo, state: FSMContext):
     await message.bot.send_message(message.from_user.id, "Рассылка успешно завершена", reply_markup=markup)
     
 
+=======
+    
+>>>>>>> Stashed changes
 def register_text_handlers(dp: Dispatcher):
     dp.register_message_handler(check_vin, state=UserStatus.check_vin)
     dp.register_message_handler(mass_mailing, state=UserStatus.mass_mailing)
     dp.register_message_handler(echo_message, state="*")
-    

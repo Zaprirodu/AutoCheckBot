@@ -11,8 +11,7 @@ from ..database.database import Repo
 from ..database.states import UserStatus
 
 
-from ..gibdd import gibdd
-from ..database import states
+from ..config import ADMINS
 
 async def start_cmd(message: types.Message, repo: Repo):
 
@@ -36,7 +35,7 @@ async def start_cmd(message: types.Message, repo: Repo):
 
 
 async def cancel_cmd(message: types.Message, state: FSMContext, repo: Repo):
-    
+
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     button1 = types.KeyboardButton('Получить отчет')
     button2 = types.KeyboardButton('Личный кабинет')
@@ -54,7 +53,10 @@ async def cancel_cmd(message: types.Message, state: FSMContext, repo: Repo):
     await message.bot.send_message(message.from_user.id, 'Выберите действие', reply_markup=markup)
 
 
+
+
 def register_commands_handlers(dp: Dispatcher):
     dp.register_message_handler(start_cmd, commands="start",state="*")
     dp.register_message_handler(cancel_cmd, commands="cancel", state="*")
-    dp.register_message_handler(cancel_cmd, Text(equals="отмена", ignore_case=True), state="*")
+    dp.register_message_handler(cancel_cmd, Text(equals="Отмена", ignore_case=True), state="*")
+    
