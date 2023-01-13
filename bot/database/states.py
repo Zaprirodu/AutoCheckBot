@@ -9,15 +9,11 @@ class UserStatus(StatesGroup):
 
     waiting_bill = State()
     waiting_payment = State()
-<<<<<<< Updated upstream
     
     mass_mailing = State()
     choosing_cat = State()
-=======
 
-    choosing_cat = State()
     
     admin = State()
     mass_mailing = State()
     set_money = State()
->>>>>>> Stashed changes

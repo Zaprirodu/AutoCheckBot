@@ -10,7 +10,7 @@ from ..database.states import UserStatus
 
 from ..config import ADMINS
 
-async def cancel_cmd(message: types.Message, state: FSMContext, repo: Repo):
+async def cancel(message: types.Message, state: FSMContext, repo: Repo):
     current_state = await state.get_state()
     if (current_state == UserStatus.mass_mailing or current_state == UserStatus.set_money):
 
@@ -61,6 +61,15 @@ async def echo_message_admin(message: types.Message, state: FSMContext, repo: Re
         
         await UserStatus.set_money.set()
         await message.bot.send_message(message.from_user.id, "Введите id пользователя и сумму", reply_markup=markup)
+    
+    elif (message.text == "Отчет по продажам"):
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        button1 = types.KeyboardButton('Получить отчет за сегодня')
+        button2 = types.KeyboardButton('Получить отчет за период')
+
+        markup.add(button1).add(button2)
+
+        message.bot.send_message(message.from_user.id, 'Выберите действие', reply_markup=markup)
 
     elif (message.text == "Выход"):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -81,6 +90,12 @@ async def add_money(message: types.Message, state: FSMContext, repo: Repo):
     button3 = types.KeyboardButton('Выход')
 
     markup.add(button1).add(button2).add(button3)
+
+    if (message.text == "отмена" or message.text == "Отмена"):
+        await UserStatus.admin.set()
+        await message.bot.send_message(message.from_user.id, "Отменено", reply_markup=markup)
+        return
+    
     await repo.set_value(int(message.text.split()[0]), int(message.text.split()[1]))
     await message.bot.send_message(message.from_user.id, "средства успешно зачислены", reply_markup=markup)
     await UserStatus.admin.set()
@@ -94,7 +109,11 @@ async def mass_mailing(message: types.Message, state: FSMContext, repo: Repo):
 
     markup.add(button1).add(button2).add(button3)
 
-
+    if (message.text == "отмена" or message.text == "Отмена"):
+        await UserStatus.admin.set()
+        await message.bot.send_message(message.from_user.id, "Отменено", reply_markup=markup)
+        return
+    
     users = await repo.get_users()
     await MessageBroadcaster(users, message).run()
     await message.bot.send_message(message.from_user.id, "Рассылка успешно завершена", reply_markup=markup)
@@ -108,12 +127,6 @@ async def mass_mailing(message: types.Message, state: FSMContext, repo: Repo):
 
 def register_admins_handlers(dp: Dispatcher):
     dp.register_message_handler(admin_cmd, commands="admin",state="*")
-    print('1 registred')
     dp.register_message_handler(echo_message_admin, state=UserStatus.admin)
-    print('2 registred')
-    dp.register_message_handler(cancel_cmd, Text(equals="Отмена", ignore_case=True), state="*")
-    print('3 registred')
     dp.register_message_handler(add_money, state=UserStatus.set_money)
-    print('5 registred')
     dp.register_message_handler(mass_mailing, state=UserStatus.mass_mailing)
-    print('6 registred')

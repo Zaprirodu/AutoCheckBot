@@ -2,9 +2,13 @@ import json
 import itertools
 import aiohttp
 import uuid
+import time
+import hashlib
+import asyncio
 
 from ..gibdd import templates
 from ..gibdd import gibdd
+from ..config import API_TOKEN
 # Основная функция - createReport(vin)
 # функция возвращает URL отчета, в самом внизу закомментирован пример
 
@@ -75,14 +79,26 @@ json1 = {
 #Токен Telegra.ph. Можно сгененерировать свой
 token = 'c0c4bc25e50641cb84eda4bb0cf29deb6384ee959b0ca257142177c9e7e8'
 
-<<<<<<< Updated upstream
-async def createVIN(gosNum):
-    vin = await gibdd.getVin(gosNum)
-    url = await createReport(vin)
-    return url
-=======
-
 async def getImageAuto(gosnum):
+    params = {
+        'regNum': gosnum,
+        'type': 'regnum',
+        'token': API_TOKEN
+    }
+    url = f"https://api-cloud.ru/api/autophoto.php"
+    img = []
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url=url, params=params) as requests:
+            req = await requests.json(content_type=None)
+            if req['count'] != 0:
+                for i in req['records']:
+                    img.append(i['urlphoto'])
+
+
+    return img
+
+
+async def getLinksAuto(gosnum):
     tstamp = str(round(time.time()*1000))
     secret = hashlib.sha256(
         f"p15{gosnum}8163461e568122437b580aa8e6df6940history{tstamp}queivoo1ieNgae2e"
@@ -113,33 +129,42 @@ async def getImageAuto(gosnum):
 
 
 
-#async def createVIN(gosNum):
-#    vin = await gibdd.getVin(gosNum)
-#    url = await createReport(vin)
-#    return url
->>>>>>> Stashed changes
+async def createVIN(gosNum):
+    vin = await gibdd.getVin(gosNum)
+    url = await createReport(vin)
+    return url
 
-async def createReport(num, arg):
-    if (arg == 0):
-        autoObj = await gibdd.get_data(num)
-        content = list(itertools.chain(mainInfo(autoObj), usedPeriod(autoObj), dtp(autoObj), limits(autoObj),
-                                    diagnostics(autoObj)))
+async def createReport(num):
+    vin, gosnum, osago = await gibdd.getVin(num)
+    print("OSAGO!!",osago)
+    autoObj = await gibdd.get_data(vin)
+    ngram = await getLinksAuto(gosnum)
+    img = await getImageAuto(gosnum)
+    content = list(itertools.chain(
+        mainInfo(autoObj),
+        usedPeriod(autoObj),
+        dtp(autoObj),
+        limits(autoObj),
+        diagnostics(autoObj),
+        social(ngram['link']),
+        osag(osago),
+        images(img)
+    ))
 
-        data = {
-            "access_token": token,
-            "title": "Автоотчет #"+str(uuid.uuid1()),
-            "content": json.dumps(content),
-        }
-        # print(data)
-        async with aiohttp.ClientSession() as session:
-            async with session.post("https://api.telegra.ph/createPage", data=data) as response:
-                r = await response.json()  
-                
-        #r = requests.post("https://api.telegra.ph/createPage", data=data).json()
-        return r['result']['url']
-    elif (arg == 1):
-        vin = await gibdd.getVin(num)
-        await createReport(vin, 0)
+    data = {
+        "access_token": token,
+        "title": "Автоотчет #"+str(uuid.uuid1()),
+        "content": json.dumps(content),
+    }
+    # print(data)
+    async with aiohttp.ClientSession() as session:
+        async with session.post("https://api.telegra.ph/createPage", data=data) as response:
+            r = await response.json()
+
+    #r = requests.post("https://api.telegra.ph/createPage", data=data).json()
+    print(r['result']['url'])
+    return r['result']['url']
+
 
 
 def mainInfo(autoObj):
@@ -212,6 +237,58 @@ def diagnostics(autoObj):
     except:
         obj.append({'tag': 'p', 'children': ['Не найдено']})
     return obj  
-    
+
+
+def images(img_lst):
+    obj = []
+    if len(img_lst) == 0:
+        obj.append({'tag': 'h4', 'children': ['Дополнительных изображений не найдено']})
+    else:
+        for count, img in enumerate(img_lst):
+            if (count > 5):
+                break
+            obj.append({
+                'tag': 'a',
+                'children': [{
+                    'tag': 'img',
+                    'attrs': {'src': img}
+                }]
+            })
+    return obj
+
+
+
+def social(soc_lst):
+    obj = []
+    if len(soc_lst) == 0:
+        obj.append({'tag': 'h4', 'children': ['Упоминаний не найдено']})
+    else:
+        obj.append({'tag': 'h4', 'children': ['Найдены упоминания: ']})
+        for soc in soc_lst:
+            obj.append({
+                'tag': 'p',
+                'children':[{
+                    'tag': 'a',
+                    'children': [soc],
+                    'attrs': {'href': soc}
+                }]
+            })
+    return obj
+
+
+def osag(osgh):
+    obj = [
+        {'tag': 'h4', 'children': ['Данные об ОСАГО']}
+    ]
+    try:
+        for diag in osgh:
+            diag_desc = templates.osago_template.format(diag['seria'] + " " + diag['nomer'], diag['orgosago'],
+                                                        diag['status'],
+                                                        diag['cel'], diag['owner'])
+            obj.append({'tag': 'p', 'children': [diag_desc]})
+    except:
+        obj.append({'tag': 'p', 'children': ['Не найдено']})
+    return obj
+
 # Пример генерации отчета
 #print(createReport('X7LBSRBYHBH427587'))

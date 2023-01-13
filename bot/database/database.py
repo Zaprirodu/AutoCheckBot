@@ -9,10 +9,10 @@ class Repo:
         ])
         return sql, tuple(parameters.values())
 
-    async def add_new_user(self, id: int) -> None:
+    async def add_new_user(self, id: int, utm: str) -> None:
         await self.conn.execute(
-            "INSERT INTO Users(id, balance) "
-            "VALUES(%s, 0) ON CONFLICT DO NOTHING" % id)
+            "INSERT INTO Users(id, balance, utm) "
+            "VALUES(%s, 0, '%s') ON CONFLICT DO NOTHING" % (id, utm))
         await self.conn.execute(
             "INSERT INTO users_cats(user_id, history_key, dtp_key, wanted_key, restrict_key, diagnostic_key) "
             "VALUES(%s, true, true, true, true, true) " 

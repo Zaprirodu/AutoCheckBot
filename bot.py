@@ -13,6 +13,8 @@ from bot.payment import pay
 from bot.payment import payment
 from bot.handlers import commands_handlers
 from bot.handlers import text_handlers
+from bot.handlers import admins_handlers
+
 from bot.utils import categories
 
 from bot import config
@@ -49,7 +51,6 @@ async def main():
     text_handlers.register_text_handlers(dp)
     payment.register_payment(dp)
     categories.register_categories(dp)
->>>>>>> Stashed changes
 
     try:
         await dp.start_polling()

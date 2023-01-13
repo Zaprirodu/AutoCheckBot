@@ -23,7 +23,10 @@ async def start_cmd(message: types.Message, repo: Repo):
     markup.add(button1).add(button2)
     inline_kb = types.InlineKeyboardMarkup().add(money)
 
-    await repo.add_new_user(message.from_user.id)
+    if (len(message.text) > 6):
+        await repo.add_new_user(message.from_user.id, message.text.split(' ')[1])
+    else:
+        await repo.add_new_user(message.from_user.id, '')
 
     balance = await repo.read_balance(message.from_user.id)
     ms = """Ваш ID: %s\nВаш баланс: %s&#8381""" % (message.from_user.id, balance)
@@ -32,6 +35,8 @@ async def start_cmd(message: types.Message, repo: Repo):
 
     await message.bot.send_message(message.from_user.id, ms, reply_markup=inline_kb)
     await message.bot.send_message(message.from_user.id, 'Выберите действие', reply_markup=markup)
+
+    print (message)
 
 
 async def cancel_cmd(message: types.Message, state: FSMContext, repo: Repo):
@@ -58,5 +63,5 @@ async def cancel_cmd(message: types.Message, state: FSMContext, repo: Repo):
 def register_commands_handlers(dp: Dispatcher):
     dp.register_message_handler(start_cmd, commands="start",state="*")
     dp.register_message_handler(cancel_cmd, commands="cancel", state="*")
-    dp.register_message_handler(cancel_cmd, Text(equals="Отмена", ignore_case=True), state="*")
+    #dp.register_message_handler(cancel_cmd, Text(equals="Отмена", ignore_case=True), state="*")
     
